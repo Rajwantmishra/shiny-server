@@ -1,0 +1,153 @@
+---
+title: "Week9 607"
+author: "Rajwant Mishra"
+date: "March 27, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rjson)
+library(XML)
+library(xml2)
+library(ggplot2)
+library(dplyr)
+library(maps)
+library(ggmap)
+# install.packages("gridExtra")
+library(mongolite)
+library(lubridate)
+library(gridExtra)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+fsp3 <- gridfs(db = "Week9", url = "mongodb+srv://msds_user:msds@cluster0-bqyhe.gcp.mongodb.net/", prefix = "fs",options = ssl_options())
+
+```
+
+```{r eval=FALSE, include=FALSE}
+
+
+
+key = "p7RTQofDauAUl97P19Ort6XLgxMWlGLG"
+
+url <- paste0("https://api.nytimes.com/svc/mostpopular/v2/emailed/7.json?api-key=",key)
+
+# req <- GET("https://api.linkedin.com/v1/people/~", config(token = token))
+
+req = GET(url)
+# req <- GET("https://api.nytimes.com/svc/mostpopular/v2/emailed/7.json",add_headers('api-key' = key))
+stop_for_status(req)
+nytdat <- content(req)
+
+
+
+
+nytdat$num_results
+nytdat$status
+
+nyt  <- content(req,"parse")
+
+nyt$results[[1]]$adx_keywords
+
+nyTable <- jsonlite::fromJSON(read_file(url))
+
+Out <- data.frame(NA)
+ img <- NA
+ imgtitle <- NA
+ MTitle <- NA
+ shortDesc <- NA
+ url <-NA
+for (n in 1: nyTable$num_results){
+  
+ img[n] <- nyTable$results$media[[n]]$`media-metadata`[[1]]$url[[3]] 
+
+imgtitle[n]<- nyTable$results$media[[n]]$caption
+MTitle[n] <- nyTable$results$title[[n]]
+shortDesc[n] <- nyTable$results$abstract[[n]]
+
+url[n] <- nyTable$results$url[[n]]
+  
+}
+
+ Out <- data.frame(unlist(img), url, unlist(imgtitle),shortDesc,MTitle)
+
+
+
+
+
+```
+
+```{r}
+
+my_collection = mongo(collection = "week9msds", db = "test", url = "mongodb+srv://msds_user:msds@cluster0-bqyhe.gcp.mongodb.net/") # create connection, database and collection
+# my_collection$insert(out)
+# my_collection$insert(nyTable)
+my_collection$iterate()$one()
+
+
+```
+
+##HTML
+
+```{r echo=FALSE}
+img <- c("https://pbs.twimg.com/profile_images/1107936345769607169/sJKWJd7g_200x200.png","https://pbs.twimg.com/profile_images/565555690119245824/Xwg6sp1Q_200x200.jpeg")
+
+# 
+# 
+# sent_qty_brand_img<- data.frame(
+# Brand = paste0('<img src="https://github.com/Rajwantmishra/lux/blob/master/brand/',sent_qty_brand$Dv,'.png?raw=true" height="42" width="42" >'),sent_qty_brand)
+# 
+# 
+img <- as.data.frame(img) 
+img <- data.frame(url = img)
+img$Brand<- paste0('<img src="',img$img,'" height="42" width="42" >')
+
+
+
+# htmltools::HTML(paste0("<img src='",img,"' alt='Ronald van Loon'>"))
+
+
+# R2HTML::HTML(paste0("<img src='",img,"' alt='Ronald van Loon'>"))
+library(DT)
+datatable(img,caption="Qty by Brand", escape = FALSE ,style = 'bootstrap', class = 'table-bordered table-condensed',autoHideNavigation = TRUE,rownames = FALSE,options = list(searching = FALSE))
+          
+
+```
+
+
+
+```{r eval=FALSE, include=FALSE}
+#---------REad Tweet
+location <- read_csv("https://raw.githubusercontent.com/Rajwantmishra/msds/master/607/Project%203/Prework/linkedin.csv")
+
+
+
+location <- separate(location,`DataLink$Location`,c("city","Country"), ",|/",fill = "warn")
+location$city <- str_replace_all(location$city ,"Greater | Area","")
+location$city <- str_replace_all(location$city," ","%20")
+
+urlloc<- "http://api.nytimes.com/svc/semantic/v2/geocodes/query.json?"
+
+
+req = GET(urlll )
+locdata <- content(req)
+location$latitude <- NA
+location$longitude <- NA
+location$Name <- NA
+for (n in 1 :length(location$city)){
+  urlll <- paste0(urlloc,"name=",location$city[n],"&api-key=",key)
+   Sys.sleep(10)
+  req = GET(urlll )
+  locdata <- content(req)
+  location$latitude[n] <- locdata$results[[1]]$latitude
+location$longitude[n] <- locdata$results[[1]]$longitude
+location$Name[n] <- locdata$results[[1]]$name
+  
+}
+location
+
+htmltools::htmlEscape(location$city)
+```
+
